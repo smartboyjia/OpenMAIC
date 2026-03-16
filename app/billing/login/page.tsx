@@ -39,7 +39,7 @@ export default function BillingAuthPage() {
         <h1 className="text-2xl font-bold text-white mb-2 text-center">
           {mode === 'login' ? '登录账户' : '注册账户'}
         </h1>
-        <p className="text-gray-500 text-sm text-center mb-6">OpenMAIC Token 管理系统</p>
+        <p className="text-gray-500 text-sm text-center mb-6">DeckMind 智课 · 配额管理</p>
 
         <form onSubmit={submit} className="bg-gray-900 rounded-2xl p-6 space-y-4 border border-gray-800">
           <div>

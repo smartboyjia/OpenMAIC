@@ -1,9 +1,9 @@
 <!-- <p align="center">
-  <img src="assets/logo-horizontal.png" alt="OpenMAIC" width="420"/>
+  <img src="assets/logo-horizontal.png" alt="DeckMind" width="420"/>
 </p> -->
 
 <p align="center">
-  <img src="assets/banner.png" alt="OpenMAIC Banner" width="680"/>
+  <img src="assets/banner.png" alt="DeckMind Banner" width="680"/>
 </p>
 
 <p align="center">
@@ -13,10 +13,10 @@
 <p align="center">
   <a href="https://jcst.ict.ac.cn/en/article/doi/10.1007/s11390-025-6000-0"><img src="https://img.shields.io/badge/Paper-JCST'26-blue?style=flat-square" alt="Paper"/></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-AGPL--3.0-blue.svg?style=flat-square" alt="License: AGPL-3.0"/></a>
-  <a href="https://open.maic.chat/"><img src="https://img.shields.io/badge/Demo-Live-brightgreen?style=flat-square" alt="Live Demo"/></a>
-  <a href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FTHU-MAIC%2FOpenMAIC&envDescription=Configure%20at%20least%20one%20LLM%20provider%20API%20key%20(e.g.%20OPENAI_API_KEY%2C%20ANTHROPIC_API_KEY).%20All%20providers%20are%20optional.&envLink=https%3A%2F%2Fgithub.com%2FTHU-MAIC%2FOpenMAIC%2Fblob%2Fmain%2F.env.example&project-name=openmaic&framework=nextjs"><img src="https://vercel.com/button" alt="Deploy with Vercel" height="20"/></a>
+  <a href="https://deckmind.app/"><img src="https://img.shields.io/badge/Demo-Live-brightgreen?style=flat-square" alt="Live Demo"/></a>
+  <a href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FTHU-DeckMind%2FDeckMind&envDescription=Configure%20at%20least%20one%20LLM%20provider%20API%20key%20(e.g.%20OPENAI_API_KEY%2C%20ANTHROPIC_API_KEY).%20All%20providers%20are%20optional.&envLink=https%3A%2F%2Fgithub.com%2FTHU-DeckMind%2FDeckMind%2Fblob%2Fmain%2F.env.example&project-name=deckmind&framework=nextjs"><img src="https://vercel.com/button" alt="Deploy with Vercel" height="20"/></a>
   <a href="#-openclaw-integration"><img src="https://img.shields.io/badge/OpenClaw-Integration-F4511E?style=flat-square" alt="OpenClaw Integration"/></a>
-  <a href="https://github.com/THU-MAIC/OpenMAIC/stargazers"><img src="https://img.shields.io/github/stars/THU-MAIC/OpenMAIC?style=flat-square" alt="Stars"/></a>
+  <a href="https://github.com/THU-DeckMind/DeckMind/stargazers"><img src="https://img.shields.io/github/stars/THU-DeckMind/DeckMind?style=flat-square" alt="Stars"/></a>
   <br/>
   <a href="https://discord.gg/PtZaaTbH"><img src="https://img.shields.io/badge/Discord-Join_Community-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord"/></a>
   &nbsp;
@@ -32,13 +32,13 @@
 <p align="center">
   <a href="./README.md">English</a> | <a href="./README-zh.md">简体中文</a>
   <br/>
-  <a href="https://open.maic.chat/">Live Demo</a> · <a href="#-quick-start">Quick Start</a> · <a href="#-features">Features</a> · <a href="#-use-cases">Use Cases</a> · <a href="#-openclaw-integration">OpenClaw</a>
+  <a href="https://deckmind.app/">Live Demo</a> · <a href="#-quick-start">Quick Start</a> · <a href="#-features">Features</a> · <a href="#-use-cases">Use Cases</a> · <a href="#-openclaw-integration">OpenClaw</a>
 </p>
 
 
 ## 📖 Overview
 
-**OpenMAIC** (Open Multi-Agent Interactive Classroom) is an open-source AI platform that turns any topic or document into a rich, interactive classroom experience. Powered by multi-agent orchestration, it generates slides, quizzes, interactive simulations, and project-based learning activities — all delivered by AI teachers and AI classmates who can speak, draw on a whiteboard, and engage in real-time discussions with you. With built-in [OpenClaw](https://github.com/openclaw/openclaw) integration, you can generate classrooms directly from messaging apps like Feishu, Slack, or Telegram.
+**DeckMind** (Open Multi-Agent Interactive Classroom) is an open-source AI platform that turns any topic or document into a rich, interactive classroom experience. Powered by multi-agent orchestration, it generates slides, quizzes, interactive simulations, and project-based learning activities — all delivered by AI teachers and AI classmates who can speak, draw on a whiteboard, and engage in real-time discussions with you. With built-in [OpenClaw](https://github.com/openclaw/openclaw) integration, you can generate classrooms directly from messaging apps like Feishu, Slack, or Telegram.
 
 https://github.com/user-attachments/assets/b4ab35ac-f994-46b1-8957-e82fe87ff0e9
 
@@ -54,13 +54,13 @@ https://github.com/user-attachments/assets/b4ab35ac-f994-46b1-8957-e82fe87ff0e9
 ---
 
 > [!TIP]
-> ### <img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/openclaw.png" height="20" align="top"/> Use OpenMAIC from your chat app — zero setup
+> ### <img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/openclaw.png" height="20" align="top"/> Use DeckMind from your chat app — zero setup
 >
 > With [OpenClaw](https://github.com/openclaw/openclaw), you can generate classrooms directly from Feishu, Slack, Discord, Telegram, and 20+ messaging apps. Two ways to get started:
 >
 > **Option A: Hosted mode** (no local setup needed)
-> 1. Get an access code at [open.maic.chat](https://open.maic.chat/)
-> 2. `clawhub install openmaic`
+> 1. Get an access code at [deckmind.app](https://deckmind.app/)
+> 2. `clawhub install deckmind`
 > 3. Tell your assistant *"teach me quantum physics"* — done!
 >
 > **Option B: Self-hosted** — the skill walks you through clone, config, and startup step by step.
@@ -79,8 +79,8 @@ https://github.com/user-attachments/assets/b4ab35ac-f994-46b1-8957-e82fe87ff0e9
 ### 1. Clone & Install
 
 ```bash
-git clone https://github.com/THU-MAIC/OpenMAIC.git
-cd OpenMAIC
+git clone https://github.com/THU-DeckMind/DeckMind.git
+cd DeckMind
 pnpm install
 ```
 
@@ -112,7 +112,7 @@ Supported providers: **OpenAI**, **Anthropic**, **Google Gemini**, **DeepSeek**,
 
 > **Recommended model:** **Gemini 3 Flash** — best balance of quality and speed. For highest quality (at slower speed), try **Gemini 3.1 Pro**.
 >
-> If you want OpenMAIC server APIs to use Gemini by default, also set `DEFAULT_MODEL=google:gemini-3-flash-preview`.
+> If you want DeckMind server APIs to use Gemini by default, also set `DEFAULT_MODEL=google:gemini-3-flash-preview`.
 
 ### 3. Run
 
@@ -130,7 +130,7 @@ pnpm build && pnpm start
 
 ### Vercel Deployment
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FTHU-MAIC%2FOpenMAIC&envDescription=Configure%20at%20least%20one%20LLM%20provider%20API%20key%20(e.g.%20OPENAI_API_KEY%2C%20ANTHROPIC_API_KEY).%20All%20providers%20are%20optional.&envLink=https%3A%2F%2Fgithub.com%2FTHU-MAIC%2FOpenMAIC%2Fblob%2Fmain%2F.env.example&project-name=openmaic&framework=nextjs)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FTHU-DeckMind%2FDeckMind&envDescription=Configure%20at%20least%20one%20LLM%20provider%20API%20key%20(e.g.%20OPENAI_API_KEY%2C%20ANTHROPIC_API_KEY).%20All%20providers%20are%20optional.&envLink=https%3A%2F%2Fgithub.com%2FTHU-DeckMind%2FDeckMind%2Fblob%2Fmain%2F.env.example&project-name=deckmind&framework=nextjs)
 
 Or manually:
 
@@ -159,7 +159,7 @@ Set `PDF_MINERU_BASE_URL` (and `PDF_MINERU_API_KEY` if needed) in `.env.local`.
 
 ### Lesson Generation
 
-Describe what you want to learn or attach reference materials. OpenMAIC's two-stage pipeline handles the rest:
+Describe what you want to learn or attach reference materials. DeckMind's two-stage pipeline handles the rest:
 
 | Stage | What Happens |
 |-------|-------------|
@@ -240,7 +240,7 @@ Choose a role and collaborate with AI agents on structured projects with milesto
 <tr>
 <td valign="top">
 
-OpenMAIC integrates with [OpenClaw](https://github.com/openclaw/openclaw) — a personal AI assistant that connects to messaging platforms you already use (Feishu, Slack, Discord, Telegram, WhatsApp, etc.). With this integration, you can **generate and view interactive classrooms directly from your chat app** without ever touching a terminal.
+DeckMind integrates with [OpenClaw](https://github.com/openclaw/openclaw) — a personal AI assistant that connects to messaging platforms you already use (Feishu, Slack, Discord, Telegram, WhatsApp, etc.). With this integration, you can **generate and view interactive classrooms directly from your chat app** without ever touching a terminal.
 
 </td>
 <td width="360" valign="top">
@@ -253,7 +253,7 @@ OpenMAIC integrates with [OpenClaw](https://github.com/openclaw/openclaw) — a 
 
 Just tell your OpenClaw assistant what you want to learn — it handles everything else:
 
-- **Hosted mode** — Grab an access code from [open.maic.chat](https://open.maic.chat/), save it in your config, and generate classrooms instantly — no local setup required
+- **Hosted mode** — Grab an access code from [deckmind.app](https://deckmind.app/), save it in your config, and generate classrooms instantly — no local setup required
 - **Self-hosted mode** — Clone, install dependencies, configure API keys, and start the server — the skill guides you through each step
 - **Track progress** — Poll the async generation job and send you the link when ready
 
@@ -264,14 +264,14 @@ Every step asks for your confirmation first. No black-box automation.
 **Available on ClawHub** — Install with one command:
 
 ```bash
-clawhub install openmaic
+clawhub install deckmind
 ```
 
 Or copy manually:
 
 ```bash
 mkdir -p ~/.openclaw/skills
-cp -R /path/to/OpenMAIC/skills/openmaic ~/.openclaw/skills/openmaic
+cp -R /path/to/DeckMind/skills/deckmind ~/.openclaw/skills/deckmind
 ```
 
 </td></tr></table>
@@ -292,12 +292,12 @@ Optional config in `~/.openclaw/openclaw.json`:
 {
   "skills": {
     "entries": {
-      "openmaic": {
+      "deckmind": {
         "config": {
-          // Hosted mode: paste your access code from open.maic.chat
+          // Hosted mode: paste your access code from deckmind.app
           "accessCode": "sk-xxx",
           // Self-hosted mode: local repo path and URL
-          "repoDir": "/path/to/OpenMAIC",
+          "repoDir": "/path/to/DeckMind",
           "url": "http://localhost:3000"
         }
       }
@@ -371,7 +371,7 @@ We welcome contributions from the community! Whether it's bug reports, feature i
 ### Project Structure
 
 ```
-OpenMAIC/
+DeckMind/
 ├── app/                        # Next.js App Router
 │   ├── api/                    #   Server API routes (~18 endpoints)
 │   │   ├── generate/           #     Scene generation pipeline (outlines, content, images, TTS …)
@@ -416,7 +416,7 @@ OpenMAIC/
 │   └── mathml2omml/            #   MathML → Office Math conversion
 │
 ├── skills/                     # OpenClaw / ClawHub skills
-│   └── openmaic/               #   Guided OpenMAIC setup & generation SOP
+│   └── deckmind/               #   Guided DeckMind setup & generation SOP
 │       ├── SKILL.md            #   Thin router with confirmation rules
 │       └── references/         #   On-demand SOP sections
 │
@@ -443,17 +443,17 @@ OpenMAIC/
 
 ## 💼 Commercial Licensing
 
-This project is licensed under AGPL-3.0. For commercial licensing inquiries, please contact: **thu_maic@tsinghua.edu.cn**
+This project is licensed under AGPL-3.0. For commercial licensing inquiries, please contact: **your@email.com**
 
 ---
 
 ## 📝 Citation
 
-If you find OpenMAIC useful in your research, please consider citing:
+If you find DeckMind useful in your research, please consider citing:
 
 ```bibtex
 @Article{JCST-2509-16000,
-  title = {From MOOC to MAIC: Reimagine Online Teaching and Learning through LLM-driven Agents},
+  title = {From MOOC to DeckMind: Reimagine Online Teaching and Learning through LLM-driven Agents},
   journal = {Journal of Computer Science and Technology},
   volume = {},
   number = {},
@@ -470,7 +470,7 @@ If you find OpenMAIC useful in your research, please consider citing:
 
 ## ⭐ Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=THU-MAIC/OpenMAIC&type=Date)](https://star-history.com/#THU-MAIC/OpenMAIC&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=THU-DeckMind/DeckMind&type=Date)](https://star-history.com/#THU-DeckMind/DeckMind&Date)
 
 ---
 

@@ -23,7 +23,7 @@ const log = createLogger('AuthService');
 // ---------------------------------------------------------------------------
 const JWT_SECRET_RAW = process.env.BILLING_JWT_SECRET ?? 'change-me-in-production-please!!';
 const JWT_SECRET = new TextEncoder().encode(JWT_SECRET_RAW);
-const COOKIE_NAME = 'maic-auth';
+const COOKIE_NAME = 'deckmind-auth';
 const BCRYPT_ROUNDS = 10;
 
 export interface JWTPayload {

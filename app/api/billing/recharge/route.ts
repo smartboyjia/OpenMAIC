@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
     const { qrCode } = await createAlipayQRCode({
       outTradeNo: tx.id,
       amountFen: pkg.amountFen,
-      subject: `OpenMAIC ${pkg.label} (${pkg.pages}页)`,
+      subject: `DeckMind · 智课 ${pkg.label} (${pkg.pages}页)`,
     });
 
     return apiSuccess({

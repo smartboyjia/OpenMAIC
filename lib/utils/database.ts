@@ -25,7 +25,7 @@ export interface Snapshot {
 }
 
 /**
- * MAIC Local Database
+ * DeckMind Local Database
  *
  * Uses IndexedDB to store all user data locally
  * - Does not delete expired data; all data is stored permanently
@@ -173,13 +173,13 @@ export function mediaFileKey(stageId: string, elementId: string): string {
 
 // ==================== Database Definition ====================
 
-const DATABASE_NAME = 'MAIC-Database';
+const DATABASE_NAME = 'DeckMind-Database';
 const _DATABASE_VERSION = 8;
 
 /**
- * MAIC Database Instance
+ * DeckMind Database Instance
  */
-class MAICDatabase extends Dexie {
+class DeckMindDatabase extends Dexie {
   // Table definitions
   stages!: EntityTable<StageRecord, 'id'>;
   scenes!: EntityTable<SceneRecord, 'id'>;
@@ -312,7 +312,7 @@ class MAICDatabase extends Dexie {
 }
 
 // Create database instance
-export const db = new MAICDatabase();
+export const db = new DeckMindDatabase();
 
 // ==================== Helper Functions ====================
 
