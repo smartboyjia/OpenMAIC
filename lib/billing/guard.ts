@@ -75,7 +75,7 @@ export async function billingGuard(
   const session = await getSessionFromCookie();
   if (!session) {
     return {
-      error: apiError('MISSING_REQUIRED_FIELD' as never, 401, 'Authentication required'),
+      error: apiError('UNAUTHORIZED', 401, 'Authentication required'),
       userId: null,
       commit: () => {},
     };
@@ -90,7 +90,7 @@ export async function billingGuard(
       log.warn(`User ${userId} balance=${balance} insufficient for preflight=${preflightTokens}`);
       return {
         error: apiError(
-          'MISSING_REQUIRED_FIELD' as never,
+          'INSUFFICIENT_TOKENS',
           402,
           'Insufficient tokens',
           `Balance: ${balance}, Required: ${preflightTokens}. Please recharge.`,

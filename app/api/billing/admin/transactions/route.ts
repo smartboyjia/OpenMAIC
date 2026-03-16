@@ -28,8 +28,8 @@ export async function POST(req: NextRequest) {
     return apiSuccess({ message: 'Payment confirmed', transaction: tx });
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Unknown error';
-    if (msg === 'Unauthorized') return apiError('MISSING_REQUIRED_FIELD' as never, 401, 'Unauthorized');
-    if (msg === 'Forbidden') return apiError('MISSING_REQUIRED_FIELD' as never, 403, 'Forbidden');
+    if (msg === 'Unauthorized') return apiError('UNAUTHORIZED', 401, 'Unauthorized');
+    if (msg === 'Forbidden') return apiError('FORBIDDEN', 403, 'Forbidden');
     if (msg.includes('not found')) return apiError('INVALID_REQUEST', 404, msg);
     return apiError('INTERNAL_ERROR', 500, 'Failed to confirm payment', msg);
   }

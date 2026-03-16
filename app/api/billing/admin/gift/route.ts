@@ -31,8 +31,8 @@ export async function POST(req: NextRequest) {
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Unknown error';
-    if (msg === 'Unauthorized') return apiError('MISSING_REQUIRED_FIELD' as never, 401, 'Unauthorized');
-    if (msg === 'Forbidden') return apiError('MISSING_REQUIRED_FIELD' as never, 403, 'Forbidden');
+    if (msg === 'Unauthorized') return apiError('UNAUTHORIZED', 401, 'Unauthorized');
+    if (msg === 'Forbidden') return apiError('FORBIDDEN', 403, 'Forbidden');
     return apiError('INTERNAL_ERROR', 500, 'Gift failed', msg);
   }
 }
