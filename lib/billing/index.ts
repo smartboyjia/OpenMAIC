@@ -1,26 +1,24 @@
-/**
- * Billing module barrel export
- */
-
 export { getBillingDB } from './db';
 export type { UserRow, LedgerRow, TransactionRow } from './db';
 
 export {
   getBalance,
   getLedger,
-  giftTokens,
-  deductTokens,
-  hasEnoughTokens,
+  giftPages,
+  deductPages,
+  hasEnoughPages,
   createRechargeTransaction,
   markTransactionPaid,
   getTransactions,
   getUserById,
   getUserByEmail,
   listUsers,
+  InsufficientPagesError,
   InsufficientTokensError,
-  TOKEN_PER_CNY,
-  GIFT_TOKENS_ON_REGISTER,
+  PACKAGES,
+  GIFT_PAGES_ON_REGISTER,
 } from './service';
+export type { PackageId } from './service';
 
 export {
   registerUser,

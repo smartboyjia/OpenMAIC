@@ -1,38 +1,38 @@
 /**
- * Admin: Gift tokens to a user
  * POST /api/billing/admin/gift
- * Body: { userId, tokens, note? }
+ * 管理员赠送 PPT 页数配额
+ * Body: { userId, pages, note? }
  */
 
 import { type NextRequest } from 'next/server';
 import { apiError, apiSuccess } from '@/lib/server/api-response';
-import { requireAdmin, giftTokens, getBalance, getUserById } from '@/lib/billing';
+import { requireAdmin, giftPages, getBalance, getUserById } from '@/lib/billing';
 
 export async function POST(req: NextRequest) {
   try {
     const admin = await requireAdmin();
-    const { userId, tokens, note } = await req.json();
+    const { userId, pages, note } = await req.json();
 
-    if (!userId || !tokens || tokens <= 0) {
-      return apiError('MISSING_REQUIRED_FIELD', 400, 'userId and tokens (>0) are required');
+    if (!userId || !pages || pages <= 0) {
+      return apiError('MISSING_REQUIRED_FIELD', 400, 'userId 和 pages（>0）为必填项');
     }
 
     const user = getUserById(userId);
-    if (!user) return apiError('INVALID_REQUEST', 404, `User ${userId} not found`);
+    if (!user) return apiError('INVALID_REQUEST', 404, `用户 ${userId} 不存在`);
 
-    giftTokens(userId, tokens, note ?? `Admin gift`, admin.sub);
+    giftPages(userId, pages, note ?? '管理员赠送', admin.sub);
     const newBalance = getBalance(userId);
 
     return apiSuccess({
-      message: `Gifted ${tokens} tokens to ${user.email}`,
+      message: `已赠送 ${pages} 页给 ${user.email}`,
       userId,
-      tokensGifted: tokens,
+      pagesGifted: pages,
       newBalance,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Unknown error';
-    if (msg === 'Unauthorized') return apiError('UNAUTHORIZED', 401, 'Unauthorized');
-    if (msg === 'Forbidden') return apiError('FORBIDDEN', 403, 'Forbidden');
-    return apiError('INTERNAL_ERROR', 500, 'Gift failed', msg);
+    if (msg === 'Unauthorized') return apiError('UNAUTHORIZED', 401, '未登录');
+    if (msg === 'Forbidden') return apiError('FORBIDDEN', 403, '无权限');
+    return apiError('INTERNAL_ERROR', 500, '赠送失败', msg);
   }
 }

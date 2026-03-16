@@ -24,6 +24,8 @@ export interface ClassroomGenerationJob {
   updatedAt: string;
   startedAt?: string;
   completedAt?: string;
+  /** Billing: user who initiated this job (null = anonymous / billing disabled) */
+  userId?: string;
   inputSummary: {
     requirementPreview: string;
     language: string;
@@ -102,6 +104,7 @@ export function isValidClassroomJobId(jobId: string): boolean {
 export async function createClassroomGenerationJob(
   jobId: string,
   input: GenerateClassroomInput,
+  userId?: string,
 ): Promise<ClassroomGenerationJob> {
   const now = new Date().toISOString();
   const job: ClassroomGenerationJob = {
@@ -112,6 +115,7 @@ export async function createClassroomGenerationJob(
     message: 'Classroom generation job queued',
     createdAt: now,
     updatedAt: now,
+    ...(userId ? { userId } : {}),
     inputSummary: buildInputSummary(input),
     scenesGenerated: 0,
   };
@@ -197,7 +201,7 @@ export async function markClassroomGenerationJobSucceeded(
   jobId: string,
   result: GenerateClassroomResult,
 ): Promise<ClassroomGenerationJob> {
-  return updateClassroomGenerationJob(jobId, {
+  const job = await updateClassroomGenerationJob(jobId, {
     status: 'succeeded',
     step: 'completed',
     progress: 100,
@@ -210,6 +214,26 @@ export async function markClassroomGenerationJobSucceeded(
       scenesCount: result.scenesCount,
     },
   });
+
+  // ── Billing: deduct actual pages generated ────────────────────────────────
+  if (job.userId && result.scenesCount > 0) {
+    try {
+      const { deductPages, isBillingEnabled } = await import('@/lib/billing');
+      if (isBillingEnabled()) {
+        deductPages(
+          job.userId,
+          result.scenesCount,
+          `生成课堂 ${jobId}（${result.scenesCount} 页）`,
+          jobId,
+        );
+      }
+    } catch (e) {
+      // Billing failure must NOT fail the generation — log and continue
+      console.error(`[Billing] Failed to deduct pages for job ${jobId}:`, e);
+    }
+  }
+
+  return job;
 }
 
 export async function markClassroomGenerationJobFailed(

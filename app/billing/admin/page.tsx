@@ -17,7 +17,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [giftTarget, setGiftTarget] = useState('');
-  const [giftTokens, setGiftTokens] = useState('100000');
+  const [giftPages, setGiftPages] = useState('100000');
   const [giftNote, setGiftNote] = useState('');
   const [giftMsg, setGiftMsg] = useState('');
   const [giftLoading, setGiftLoading] = useState(false);
@@ -47,11 +47,11 @@ export default function AdminPage() {
       const res = await fetch('/api/billing/admin/gift', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: giftTarget, tokens: parseInt(giftTokens), note: giftNote }),
+        body: JSON.stringify({ userId: giftTarget, pages: parseInt(giftPages), note: giftNote }),
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.error);
-      setGiftMsg(`✅ 已赠送 ${parseInt(giftTokens).toLocaleString()} Tokens 给 ${data.userId}`);
+      setGiftMsg(`✅ 已赠送页数 给 ${data.userId}`);
       await loadUsers();
     } catch (e) {
       setGiftMsg(`❌ ${e instanceof Error ? e.message : '失败'}`);
@@ -86,7 +86,7 @@ export default function AdminPage() {
 
         {/* Gift Tokens */}
         <section>
-          <h2 className="text-base font-semibold mb-3">🎁 赠送 Tokens</h2>
+          <h2 className="text-base font-semibold mb-3">🎁 赠送页数配额</h2>
           <form onSubmit={giftSubmit} className="bg-gray-900 rounded-2xl p-5 space-y-3 border border-gray-800">
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -100,10 +100,10 @@ export default function AdminPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Tokens 数量</label>
+                <label className="block text-xs text-gray-500 mb-1">页数</label>
                 <input
-                  value={giftTokens}
-                  onChange={(e) => setGiftTokens(e.target.value)}
+                  value={giftPages}
+                  onChange={(e) => setGiftPages(e.target.value)}
                   type="number"
                   min="1"
                   required

@@ -1,15 +1,15 @@
 /**
- * Billing Service
+ * Billing Service (PPT Page Quota Edition)
  *
- * Core business logic for token balance management.
- * All mutations are wrapped in SQLite transactions — atomic & consistent.
+ * Unit: 1 quota = 1 PPT page (scene)
  *
- * Token pricing model:
- *   1 CNY = TOKEN_PER_CNY tokens  (configurable via env TOKEN_PER_CNY)
- *   Default: 1 CNY = 100,000 tokens  (i.e. 10 yuan = 1,000,000 tokens)
+ * Pricing packages (¥ → pages):
+ *   ¥9.9  → 200  pages
+ *   ¥29   → 800  pages
+ *   ¥79   → 3000 pages
+ *   ¥199  → 10000 pages
  *
- * LLM usage deduction:
- *   Actual token usage from AI SDK is mapped 1:1 to billing tokens.
+ * New user gift: 20 free pages (GIFT_PAGES_ON_REGISTER)
  */
 
 import { nanoid } from 'nanoid';
@@ -22,12 +22,20 @@ const log = createLogger('BillingService');
 // ---------------------------------------------------------------------------
 // Config
 // ---------------------------------------------------------------------------
-/** How many billing tokens per 1 CNY */
-export const TOKEN_PER_CNY = parseInt(process.env.TOKEN_PER_CNY ?? '100000', 10);
 
-/** Initial free tokens granted to every new user */
-export const GIFT_TOKENS_ON_REGISTER = parseInt(
-  process.env.GIFT_TOKENS_ON_REGISTER ?? '500000',
+/** Pricing packages — amount in 分 (1 CNY = 100 fen) */
+export const PACKAGES = [
+  { id: 'pkg_starter',  label: '入门版', amountFen: 990,   pages: 200   },
+  { id: 'pkg_standard', label: '标准版', amountFen: 2900,  pages: 800   },
+  { id: 'pkg_pro',      label: '专业版', amountFen: 7900,  pages: 3000  },
+  { id: 'pkg_team',     label: '团队版', amountFen: 19900, pages: 10000 },
+] as const;
+
+export type PackageId = (typeof PACKAGES)[number]['id'];
+
+/** Free pages given to every new user on registration */
+export const GIFT_PAGES_ON_REGISTER = parseInt(
+  process.env.GIFT_PAGES_ON_REGISTER ?? '20',
   10,
 );
 
@@ -35,11 +43,14 @@ export const GIFT_TOKENS_ON_REGISTER = parseInt(
 // Balance queries
 // ---------------------------------------------------------------------------
 
-/** Get the current token balance for a user (0 if no ledger entries yet) */
+/** Get current page quota balance for a user (0 if none) */
 export function getBalance(userId: string): number {
   const db = getBillingDB();
   const row = db
-    .prepare(`SELECT balance FROM token_ledger WHERE user_id = ? ORDER BY created_at DESC, rowid DESC LIMIT 1`)
+    .prepare(
+      `SELECT balance FROM token_ledger WHERE user_id = ?
+       ORDER BY created_at DESC, rowid DESC LIMIT 1`,
+    )
     .get(userId) as { balance: number } | undefined;
   return row?.balance ?? 0;
 }
@@ -49,13 +60,14 @@ export function getLedger(userId: string, limit = 50): LedgerRow[] {
   const db = getBillingDB();
   return db
     .prepare(
-      `SELECT * FROM token_ledger WHERE user_id = ? ORDER BY created_at DESC, rowid DESC LIMIT ?`,
+      `SELECT * FROM token_ledger WHERE user_id = ?
+       ORDER BY created_at DESC, rowid DESC LIMIT ?`,
     )
     .all(userId, limit) as LedgerRow[];
 }
 
 // ---------------------------------------------------------------------------
-// Credit / Debit (internal, always inside a transaction)
+// Internal ledger write
 // ---------------------------------------------------------------------------
 
 function _addLedgerEntry(
@@ -70,7 +82,7 @@ function _addLedgerEntry(
   const newBalance = currentBalance + delta;
 
   if (newBalance < 0) {
-    throw new InsufficientTokensError(currentBalance, Math.abs(delta));
+    throw new InsufficientPagesError(currentBalance, Math.abs(delta));
   }
 
   const entry: LedgerRow = {
@@ -97,43 +109,42 @@ function _addLedgerEntry(
 // ---------------------------------------------------------------------------
 
 /**
- * Gift tokens to a user (admin action or new-user welcome bonus).
- * Never throws InsufficientTokensError.
+ * Gift pages to a user (admin action or new-user welcome bonus).
  */
-export function giftTokens(
+export function giftPages(
   userId: string,
-  tokens: number,
+  pages: number,
   note?: string,
   adminId?: string,
 ): LedgerRow {
-  log.info(`Gift ${tokens} tokens to user ${userId} by ${adminId ?? 'system'}`);
+  log.info(`Gift ${pages} pages to user ${userId} by ${adminId ?? 'system'}`);
   const db = getBillingDB();
   return db.transaction(() =>
-    _addLedgerEntry(userId, tokens, 'gift', note ?? `Gift from ${adminId ?? 'system'}`, adminId),
+    _addLedgerEntry(userId, pages, 'gift', note ?? `Gift from ${adminId ?? 'system'}`, adminId),
   )();
 }
 
 /**
- * Deduct tokens for LLM usage.
- * Throws InsufficientTokensError if balance is too low.
+ * Deduct pages after a successful generation.
+ * `pages` = actual number of scenes/slides generated.
+ * Throws InsufficientPagesError if balance is too low.
  */
-export function deductTokens(
+export function deductPages(
   userId: string,
-  tokens: number,
+  pages: number,
   note?: string,
   refId?: string,
 ): LedgerRow {
   const db = getBillingDB();
   return db.transaction(() =>
-    _addLedgerEntry(userId, -tokens, 'usage', note ?? 'LLM usage', refId),
+    _addLedgerEntry(userId, -pages, 'usage', note ?? `Generated ${pages} pages`, refId),
   )();
 }
 
 /**
- * Check if user has enough tokens without deducting.
- * Use this as a lightweight pre-flight guard before calling LLM.
+ * Check if user has enough page quota without deducting.
  */
-export function hasEnoughTokens(userId: string, required: number): boolean {
+export function hasEnoughPages(userId: string, required = 1): boolean {
   return getBalance(userId) >= required;
 }
 
@@ -143,33 +154,39 @@ export function hasEnoughTokens(userId: string, required: number): boolean {
  */
 export function createRechargeTransaction(
   userId: string,
-  amountFen: number,         // e.g. 1000 = 10.00 CNY
+  amountFen: number,
   paymentMethod: string,
 ): TransactionRow {
   const db = getBillingDB();
-  const tokens = Math.floor((amountFen / 100) * TOKEN_PER_CNY);
+  const pkg = PACKAGES.find((p) => p.amountFen === amountFen);
+  const pages = pkg?.pages ?? Math.floor((amountFen / 990) * 200); // fallback: scale from starter
+
   const tx: TransactionRow = {
     id: nanoid(16),
     user_id: userId,
     amount_fen: amountFen,
-    tokens,
+    tokens: pages, // "tokens" field stores page count in our DB
     status: 'pending',
     payment_method: paymentMethod,
     payment_ref: null,
     created_at: Math.floor(Date.now() / 1000),
     paid_at: null,
   };
+
   db.prepare(
     `INSERT INTO transactions (id, user_id, amount_fen, tokens, status, payment_method, payment_ref, created_at)
      VALUES (@id, @user_id, @amount_fen, @tokens, @status, @payment_method, @payment_ref, @created_at)`,
   ).run(tx);
-  log.info(`Created recharge tx ${tx.id}: ${amountFen}分 → ${tokens} tokens for user ${userId}`);
+
+  log.info(
+    `Created recharge tx ${tx.id}: ${amountFen}分 → ${pages} pages for user ${userId}`,
+  );
   return tx;
 }
 
 /**
- * Mark a transaction as paid and credit the tokens.
- * Idempotent — safe to call multiple times (won't double-credit).
+ * Mark a transaction as paid and credit the pages.
+ * Idempotent — safe to call multiple times.
  */
 export function markTransactionPaid(txId: string, paymentRef?: string): TransactionRow {
   const db = getBillingDB();
@@ -178,21 +195,23 @@ export function markTransactionPaid(txId: string, paymentRef?: string): Transact
       .prepare(`SELECT * FROM transactions WHERE id = ?`)
       .get(txId) as TransactionRow | undefined;
     if (!tx) throw new Error(`Transaction ${txId} not found`);
-    if (tx.status === 'paid') return tx; // already paid — idempotent
+    if (tx.status === 'paid') return tx;
 
     const now = Math.floor(Date.now() / 1000);
     db.prepare(
       `UPDATE transactions SET status='paid', payment_ref=?, paid_at=? WHERE id=?`,
     ).run(paymentRef ?? null, now, txId);
 
+    const pages = tx.tokens; // tokens field = page count
     _addLedgerEntry(
       tx.user_id,
-      tx.tokens,
+      pages,
       'purchase',
-      `Recharge ${(tx.amount_fen / 100).toFixed(2)} CNY → ${tx.tokens} tokens`,
+      `充值 ${(tx.amount_fen / 100).toFixed(2)} 元 → ${pages} 页`,
       txId,
     );
-    log.info(`Transaction ${txId} paid: +${tx.tokens} tokens to user ${tx.user_id}`);
+
+    log.info(`Transaction ${txId} paid: +${pages} pages to user ${tx.user_id}`);
     return { ...tx, status: 'paid' as const, paid_at: now };
   })();
 }
@@ -230,15 +249,18 @@ export function listUsers(limit = 100, offset = 0): UserRow[] {
 }
 
 // ---------------------------------------------------------------------------
-// Custom errors
+// Custom error
 // ---------------------------------------------------------------------------
 
-export class InsufficientTokensError extends Error {
+export class InsufficientPagesError extends Error {
   constructor(
     public readonly balance: number,
     public readonly required: number,
   ) {
-    super(`Insufficient tokens: balance=${balance}, required=${required}`);
-    this.name = 'InsufficientTokensError';
+    super(`页数配额不足：当前 ${balance} 页，需要 ${required} 页`);
+    this.name = 'InsufficientPagesError';
   }
 }
+
+// Keep old name as alias for guard.ts compatibility
+export { InsufficientPagesError as InsufficientTokensError };

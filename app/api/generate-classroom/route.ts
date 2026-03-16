@@ -9,16 +9,9 @@ import { billingGuard } from '@/lib/billing';
 
 export const maxDuration = 30;
 
-/**
- * Estimated token cost for a full classroom generation job.
- * A typical generation uses 50k–200k tokens across all sub-calls.
- * We check 50k upfront; the job runner will commit actual usage.
- */
-const CLASSROOM_PREFLIGHT_TOKENS = 50_000;
-
 export async function POST(req: NextRequest) {
-  // ── Billing guard ───────────────────────────────────────────────────────
-  const guard = await billingGuard(req, CLASSROOM_PREFLIGHT_TOKENS);
+  // ── Billing guard: require at least 1 page quota ─────────────────────────
+  const guard = await billingGuard(req, 1);
   if (guard.error) return guard.error;
 
   try {
@@ -36,18 +29,10 @@ export async function POST(req: NextRequest) {
 
     const baseUrl = buildRequestOrigin(req);
     const jobId = nanoid(10);
-    const job = await createClassroomGenerationJob(jobId, body);
+    const job = await createClassroomGenerationJob(jobId, body, guard.userId ?? undefined);
     const pollUrl = `${baseUrl}/api/generate-classroom/${jobId}`;
 
-    // The job runs asynchronously; we commit a fixed estimated cost now.
-    // For precise per-call deduction, wire guard.commit into the job runner.
-    after(() => {
-      runClassroomGenerationJob(jobId, body, baseUrl);
-      // Deduct estimated usage (50k per job kick-off; actual LLM calls
-      // inside the job will add further deductions via billingGuard wrappers
-      // on individual generate/* routes if BILLING_ENABLED=true).
-      guard.commit(CLASSROOM_PREFLIGHT_TOKENS, `Classroom generation job ${jobId}`, jobId);
-    });
+    after(() => runClassroomGenerationJob(jobId, body, baseUrl));
 
     return apiSuccess(
       {

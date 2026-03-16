@@ -41,14 +41,14 @@ db.exec(`
     role TEXT NOT NULL DEFAULT 'user', created_at INTEGER NOT NULL DEFAULT (unixepoch()),
     updated_at INTEGER NOT NULL DEFAULT (unixepoch())
   );
-  CREATE TABLE IF NOT EXISTS token_ledger (
+  CREATE TABLE IF NOT EXISTS page_ledger (
     id TEXT PRIMARY KEY, user_id TEXT NOT NULL, delta INTEGER NOT NULL,
     balance INTEGER NOT NULL, kind TEXT NOT NULL, note TEXT, ref_id TEXT,
     created_at INTEGER NOT NULL DEFAULT (unixepoch())
   );
   CREATE TABLE IF NOT EXISTS transactions (
     id TEXT PRIMARY KEY, user_id TEXT NOT NULL, amount_fen INTEGER NOT NULL,
-    tokens INTEGER NOT NULL, status TEXT NOT NULL DEFAULT 'pending',
+    pages INTEGER NOT NULL, status TEXT NOT NULL DEFAULT 'pending',
     payment_method TEXT, payment_ref TEXT,
     created_at INTEGER NOT NULL DEFAULT (unixepoch()), paid_at INTEGER
   );
@@ -80,21 +80,21 @@ db.prepare(
   `INSERT INTO users (id, email, password, role, created_at, updated_at) VALUES (?,?,?,'admin',?,?)`
 ).run(id, email, hash, now, now);
 
-// Gift welcome tokens to admin too
-const tokenPerCny = parseInt(process.env.TOKEN_PER_CNY ?? '100000', 10);
-const giftTokens = parseInt(process.env.GIFT_TOKENS_ON_REGISTER ?? '500000', 10);
-if (giftTokens > 0) {
+// Gift welcome pages to admin too
+const pagePerCny = parseInt(process.env.TOKEN_PER_CNY ?? '100000', 10);
+const giftPages = parseInt(process.env.GIFT_PAGES_ON_REGISTER ?? '500000', 10);
+if (giftPages > 0) {
   db.prepare(
-    `INSERT INTO token_ledger (id, user_id, delta, balance, kind, note, ref_id, created_at)
+    `INSERT INTO page_ledger (id, user_id, delta, balance, kind, note, ref_id, created_at)
      VALUES (?,?,?,?,'gift','Admin welcome gift',null,?)`
-  ).run(Math.random().toString(36).slice(2), id, giftTokens, giftTokens, now);
+  ).run(Math.random().toString(36).slice(2), id, giftPages, giftPages, now);
 }
 
 console.log(`\n✅ Admin created!`);
 console.log(`   ID:       ${id}`);
 console.log(`   Email:    ${email}`);
 console.log(`   Password: ${password}`);
-console.log(`   Balance:  ${giftTokens} tokens`);
+console.log(`   Balance:  ${giftPages} pages`);
 console.log(`\n⚠️  Change the default password immediately in production!\n`);
 
 db.close();

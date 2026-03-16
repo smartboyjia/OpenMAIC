@@ -12,7 +12,7 @@ import { SignJWT, jwtVerify } from 'jose';
 import { nanoid } from 'nanoid';
 import { cookies } from 'next/headers';
 import { getBillingDB } from './db';
-import { giftTokens, GIFT_TOKENS_ON_REGISTER } from './service';
+import { giftPages, GIFT_PAGES_ON_REGISTER } from './service';
 import type { UserRow } from './db';
 import { createLogger } from '@/lib/logger';
 
@@ -53,9 +53,9 @@ export async function registerUser(email: string, password: string): Promise<Use
   ).run(id, email, hash, now, now);
 
   // Gift welcome tokens
-  if (GIFT_TOKENS_ON_REGISTER > 0) {
-    giftTokens(id, GIFT_TOKENS_ON_REGISTER, `Welcome gift: ${GIFT_TOKENS_ON_REGISTER} tokens`);
-    log.info(`Gifted ${GIFT_TOKENS_ON_REGISTER} tokens to new user ${id}`);
+  if (GIFT_PAGES_ON_REGISTER > 0) {
+    giftPages(id, GIFT_PAGES_ON_REGISTER, `Welcome gift: ${GIFT_PAGES_ON_REGISTER} tokens`);
+    log.info(`Gifted ${GIFT_PAGES_ON_REGISTER} pages to new user ${id}`);
   }
 
   const user = db.prepare(`SELECT * FROM users WHERE id = ?`).get(id) as UserRow;
