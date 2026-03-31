@@ -87,6 +87,7 @@ export async function generateClassroom(
   input: GenerateClassroomInput,
   options: {
     baseUrl: string;
+    createdBy?: string;
     onProgress?: (progress: ClassroomGenerationProgress) => Promise<void> | void;
   },
 ): Promise<GenerateClassroomResult> {
@@ -239,6 +240,7 @@ export async function generateClassroom(
       id: stageId,
       stage,
       scenes,
+      createdBy: options.createdBy,
     },
     options.baseUrl,
   );

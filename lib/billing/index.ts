@@ -1,5 +1,5 @@
 export { getBillingDB } from './db';
-export type { UserRow, LedgerRow, TransactionRow } from './db';
+export type { UserRow, LedgerRow, TransactionRow, ReferralCodeRow, ReferralUseRow } from './db';
 
 export {
   getBalance,
@@ -33,3 +33,12 @@ export {
 } from './auth';
 
 export { billingGuard, isBillingEnabled } from './guard';
+
+export {
+  getOrCreateUserReferralCode,
+  lookupReferralCode,
+  applyReferralCode,
+  getUserReferralStats,
+} from './referral';
+export type { ApplyReferralResult, ReferralStats } from './referral';
+

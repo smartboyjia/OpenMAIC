@@ -14,6 +14,14 @@ interface Transaction {
   payment_method: string | null; created_at: number; paid_at: number | null;
 }
 interface Package { id: string; label: string; amountFen: number; pages: number }
+interface ReferralInfo {
+  code: string;
+  rewardPages: number;
+  useCount: number;
+  maxUses: number;
+  totalPagesEarned: number;
+  uses: { inviteeEmail: string; pagesGiven: number; createdAt: number }[];
+}
 
 const kindLabel: Record<string, string> = {
   gift: '🎁 赠送',
@@ -35,7 +43,8 @@ export default function BillingPage() {
   const [packages, setPackages] = useState<Package[]>([]);
   const [alipayEnabled, setAlipayEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<'overview' | 'recharge' | 'history'>('overview');
+  const [tab, setTab] = useState<'overview' | 'recharge' | 'history' | 'referral'>('overview');
+  const [referral, setReferral] = useState<ReferralInfo | null>(null);
 
   // 支付状态
   const [paying, setPaying] = useState(false);
@@ -61,10 +70,11 @@ export default function BillingPage() {
 
   async function load() {
     try {
-      const [me, pkgs, txs] = await Promise.all([
+      const [me, pkgs, txs, ref] = await Promise.all([
         fetch('/api/billing/me').then((r) => r.json()),
         fetch('/api/billing/recharge').then((r) => r.json()),
         fetch('/api/billing/transactions').then((r) => r.json()),
+        fetch('/api/billing/referral').then((r) => r.json()),
       ]);
       if (!me.success) { router.push('/billing/login'); return; }
       setUser(me.user);
@@ -73,6 +83,7 @@ export default function BillingPage() {
       setPackages(pkgs.packages ?? []);
       setAlipayEnabled(pkgs.alipayEnabled ?? false);
       setTransactions(txs.transactions ?? []);
+      if (ref.success) setReferral(ref);
     } catch { router.push('/billing/login'); }
     finally { setLoading(false); }
   }
@@ -212,7 +223,7 @@ export default function BillingPage() {
               <div className="bg-white rounded-xl p-3 inline-block mx-auto mb-4">
                 {/* 支付宝返回的是 https://qr.alipay.com/xxx 链接，需要转成图片 */}
                 <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrCode)}`}
+                  src={`/api/billing/qrcode?size=200&data=${encodeURIComponent(qrCode)}`}
                   alt="支付宝二维码"
                   width={200}
                   height={200}
@@ -235,7 +246,7 @@ export default function BillingPage() {
 
         {/* Tabs */}
         <div className="flex gap-1 bg-gray-900 rounded-xl p-1 mb-6">
-          {([['overview', '使用记录'], ['recharge', '充值'], ['history', '订单']] as const).map(([key, label]) => (
+          {([['overview', '使用记录'], ['recharge', '充值'], ['history', '订单'], ['referral', '邀请']] as const).map(([key, label]) => (
             <button key={key} onClick={() => setTab(key)}
               className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
                 tab === key ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-gray-200'
@@ -325,6 +336,75 @@ export default function BillingPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Referral */}
+        {tab === 'referral' && (
+          <div className="space-y-4">
+            {referral ? (
+              <>
+                {/* 邀请码卡片 */}
+                <div className="bg-gradient-to-br from-purple-900/40 to-blue-900/40 border border-purple-800/50 rounded-2xl p-6">
+                  <p className="text-sm text-purple-300 mb-2">我的专属邀请码</p>
+                  <div className="flex items-center gap-3">
+                    <span className="text-3xl font-bold font-mono tracking-widest text-white">
+                      {referral.code}
+                    </span>
+                    <button
+                      onClick={() => {
+                        const url = `${window.location.origin}/billing/login?ref=${referral.code}`;
+                        navigator.clipboard.writeText(url).then(() => alert('邀请链接已复制！'));
+                      }}
+                      className="text-xs bg-purple-700 hover:bg-purple-600 text-white rounded-lg px-3 py-1.5 transition-colors"
+                    >
+                      复制邀请链接
+                    </button>
+                  </div>
+                  <p className="text-purple-400 text-xs mt-3">
+                    好友用此码注册，双方各得 <span className="text-white font-semibold">{referral.rewardPages} 页</span> 奖励
+                  </p>
+                </div>
+
+                {/* 统计 */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-gray-900 rounded-xl p-4 text-center">
+                    <div className="text-2xl font-bold text-white">{referral.useCount}</div>
+                    <div className="text-xs text-gray-500 mt-1">成功邀请人数</div>
+                  </div>
+                  <div className="bg-gray-900 rounded-xl p-4 text-center">
+                    <div className="text-2xl font-bold text-green-400">+{referral.totalPagesEarned}</div>
+                    <div className="text-xs text-gray-500 mt-1">累计获得页数</div>
+                  </div>
+                </div>
+
+                {/* 邀请记录 */}
+                {referral.uses.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-sm text-gray-400">邀请记录</p>
+                    {referral.uses.map((u, i) => (
+                      <div key={i} className="bg-gray-900 rounded-xl px-4 py-3 flex justify-between items-center">
+                        <div>
+                          <div className="text-sm text-white">{u.inviteeEmail}</div>
+                          <div className="text-xs text-gray-600">
+                            {new Date(u.createdAt * 1000).toLocaleDateString('zh-CN')}
+                          </div>
+                        </div>
+                        <div className="text-sm text-green-400 font-medium">+{u.pagesGiven} 页</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="bg-gray-900/50 rounded-xl p-4 text-xs text-gray-500 space-y-1">
+                  <p>💡 每位好友只能使用一次邀请码</p>
+                  <p>💡 邀请奖励在好友注册完成后立即到账</p>
+                  <p>💡 不能使用自己的邀请码</p>
+                </div>
+              </>
+            ) : (
+              <p className="text-gray-600 text-sm text-center py-12">加载中…</p>
+            )}
           </div>
         )}
       </div>

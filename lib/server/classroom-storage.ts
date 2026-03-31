@@ -39,6 +39,7 @@ export interface PersistedClassroomData {
   stage: Stage;
   scenes: Scene[];
   createdAt: string;
+  createdBy?: string; // userId，可选，向后兼容
 }
 
 export function isValidClassroomId(id: string): boolean {
@@ -63,6 +64,7 @@ export async function persistClassroom(
     id: string;
     stage: Stage;
     scenes: Scene[];
+    createdBy?: string;
   },
   baseUrl: string,
 ): Promise<PersistedClassroomData & { url: string }> {
@@ -71,6 +73,7 @@ export async function persistClassroom(
     stage: data.stage,
     scenes: data.scenes,
     createdAt: new Date().toISOString(),
+    ...(data.createdBy ? { createdBy: data.createdBy } : {}),
   };
 
   await ensureClassroomsDir();

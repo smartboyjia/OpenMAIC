@@ -293,7 +293,7 @@ const useStageStoreBase = create<StageState>()((set, get) => ({
           chats: data.chats,
           outlines,
           // Compute generatingOutlines from persisted outlines minus completed scenes
-          generatingOutlines: outlines.filter((o) => !data.scenes.some((s) => s.order === o.order)),
+          generatingOutlines: outlines.filter((o: SceneOutline) => !data.scenes.some((s) => s.order === o.order)),
         });
         log.info('Loaded from storage:', stageId);
       } else {

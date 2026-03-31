@@ -19,15 +19,20 @@ export async function POST(req: NextRequest) {
 
   try {
     if (action === 'register') {
-      const { email, password } = await req.json();
+      const { email, password, referralCode } = await req.json();
       if (!email || !password) {
         return apiError('MISSING_REQUIRED_FIELD', 400, 'email and password are required');
       }
       if (password.length < 8) {
         return apiError('INVALID_REQUEST', 400, 'Password must be at least 8 characters');
       }
-      const user = await registerUser(email, password);
-      return apiSuccess({ message: 'Registered successfully', userId: user.id, email: user.email });
+      const user = await registerUser(email, password, referralCode?.trim() || undefined);
+      return apiSuccess({
+        message: 'Registered successfully',
+        userId: user.id,
+        email: user.email,
+        referralBonus: user.referralBonus ?? 0,
+      });
     }
 
     if (action === 'login') {

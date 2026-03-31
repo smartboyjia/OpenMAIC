@@ -4,6 +4,7 @@ import {
   markClassroomGenerationJobFailed,
   markClassroomGenerationJobRunning,
   markClassroomGenerationJobSucceeded,
+  readClassroomGenerationJob,
   updateClassroomGenerationJobProgress,
 } from '@/lib/server/classroom-job-store';
 
@@ -24,8 +25,13 @@ export function runClassroomGenerationJob(
     try {
       await markClassroomGenerationJobRunning(jobId);
 
+      // Read the job to get userId (createdBy) stored at job creation time
+      const job = await readClassroomGenerationJob(jobId);
+      const createdBy = job?.userId ?? undefined;
+
       const result = await generateClassroom(input, {
         baseUrl,
+        createdBy,
         onProgress: async (progress) => {
           await updateClassroomGenerationJobProgress(jobId, progress);
         },

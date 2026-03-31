@@ -57,7 +57,7 @@ export async function saveChatSessions(stageId: string, sessions: ChatSession[])
 export async function loadChatSessions(stageId: string): Promise<ChatSession[]> {
   const records = await db.chatSessions.where('stageId').equals(stageId).sortBy('createdAt');
 
-  return records.map((record) => ({
+  return records.map((record: ChatSessionRecord) => ({
     id: record.id,
     type: record.type,
     title: record.title,

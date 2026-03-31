@@ -1,6 +1,7 @@
 import { type NextRequest } from 'next/server';
 import { randomUUID } from 'crypto';
 import { apiSuccess, apiError, API_ERROR_CODES } from '@/lib/server/api-response';
+import { getSessionFromCookie } from '@/lib/billing';
 import {
   buildRequestOrigin,
   isValidClassroomId,
@@ -21,10 +22,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const session = await getSessionFromCookie();
+    const createdBy = session?.sub;
+
     const id = stage.id || randomUUID();
     const baseUrl = buildRequestOrigin(request);
 
-    const persisted = await persistClassroom({ id, stage: { ...stage, id }, scenes }, baseUrl);
+    const persisted = await persistClassroom(
+      { id, stage: { ...stage, id }, scenes, createdBy },
+      baseUrl,
+    );
 
     return apiSuccess({ id: persisted.id, url: persisted.url }, 201);
   } catch (error) {

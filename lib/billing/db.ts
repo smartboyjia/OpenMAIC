@@ -85,6 +85,32 @@ function migrate(db: Database.Database) {
       revoked_at  INTEGER
     );
     CREATE INDEX IF NOT EXISTS idx_apikey_hash ON api_keys(key_hash);
+
+    -- Referral / invite code system
+    CREATE TABLE IF NOT EXISTS referral_codes (
+      id            TEXT PRIMARY KEY,
+      user_id       TEXT NOT NULL REFERENCES users(id),
+      code          TEXT UNIQUE NOT NULL,     -- human-readable e.g. "DECK-ABC12"
+      use_count     INTEGER NOT NULL DEFAULT 0,
+      max_uses      INTEGER NOT NULL DEFAULT 100,
+      reward_pages  INTEGER NOT NULL DEFAULT 30, -- pages given to each side per use
+      expires_at    INTEGER,                  -- NULL = never expire
+      created_at    INTEGER NOT NULL DEFAULT (unixepoch()),
+      updated_at    INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+    CREATE INDEX IF NOT EXISTS idx_ref_code ON referral_codes(code);
+    CREATE INDEX IF NOT EXISTS idx_ref_user ON referral_codes(user_id);
+
+    CREATE TABLE IF NOT EXISTS referral_uses (
+      id            TEXT PRIMARY KEY,
+      code_id       TEXT NOT NULL REFERENCES referral_codes(id),
+      inviter_id    TEXT NOT NULL REFERENCES users(id),
+      invitee_id    TEXT NOT NULL REFERENCES users(id),
+      pages_given   INTEGER NOT NULL,
+      created_at    INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_refuse_invitee ON referral_uses(invitee_id); -- 每人只能用一次
+    CREATE INDEX IF NOT EXISTS idx_refuse_inviter ON referral_uses(inviter_id);
   `);
 }
 
@@ -121,4 +147,25 @@ export interface TransactionRow {
   payment_ref: string | null;
   created_at: number;
   paid_at: number | null;
+}
+
+export interface ReferralCodeRow {
+  id: string;
+  user_id: string;
+  code: string;
+  use_count: number;
+  max_uses: number;
+  reward_pages: number;
+  expires_at: number | null;
+  created_at: number;
+  updated_at: number;
+}
+
+export interface ReferralUseRow {
+  id: string;
+  code_id: string;
+  inviter_id: string;
+  invitee_id: string;
+  pages_given: number;
+  created_at: number;
 }

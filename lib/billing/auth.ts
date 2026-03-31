@@ -13,6 +13,7 @@ import { nanoid } from 'nanoid';
 import { cookies } from 'next/headers';
 import { getBillingDB } from './db';
 import { giftPages, GIFT_PAGES_ON_REGISTER } from './service';
+import { applyReferralCode, getOrCreateUserReferralCode } from './referral';
 import type { UserRow } from './db';
 import { createLogger } from '@/lib/logger';
 
@@ -23,7 +24,7 @@ const log = createLogger('AuthService');
 // ---------------------------------------------------------------------------
 const JWT_SECRET_RAW = process.env.BILLING_JWT_SECRET ?? 'change-me-in-production-please!!';
 const JWT_SECRET = new TextEncoder().encode(JWT_SECRET_RAW);
-const COOKIE_NAME = 'deckmind-auth';
+const COOKIE_NAME = 'openmaic-auth';
 const BCRYPT_ROUNDS = 10;
 
 export interface JWTPayload {
@@ -38,7 +39,11 @@ export interface JWTPayload {
 // Register
 // ---------------------------------------------------------------------------
 
-export async function registerUser(email: string, password: string): Promise<UserRow> {
+export async function registerUser(
+  email: string,
+  password: string,
+  referralCode?: string,
+): Promise<UserRow & { referralBonus?: number }> {
   const db = getBillingDB();
   const existing = db.prepare(`SELECT id FROM users WHERE email = ?`).get(email);
   if (existing) throw new Error('Email already registered');
@@ -58,9 +63,22 @@ export async function registerUser(email: string, password: string): Promise<Use
     log.info(`Gifted ${GIFT_PAGES_ON_REGISTER} pages to new user ${id}`);
   }
 
+  // Auto-create user's own referral code
+  getOrCreateUserReferralCode(id);
+
+  // Apply referral code if provided
+  let referralBonus = 0;
+  if (referralCode) {
+    const result = applyReferralCode(referralCode, id);
+    if (result) {
+      referralBonus = result.inviteePagesGiven;
+      log.info(`Applied referral code ${referralCode} for new user ${id}, bonus: ${referralBonus}`);
+    }
+  }
+
   const user = db.prepare(`SELECT * FROM users WHERE id = ?`).get(id) as UserRow;
   log.info(`Registered user ${email} (${id})`);
-  return user;
+  return { ...user, referralBonus };
 }
 
 // ---------------------------------------------------------------------------
