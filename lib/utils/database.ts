@@ -177,9 +177,9 @@ const DATABASE_NAME = 'DeckMind-Database';
 const _DATABASE_VERSION = 8;
 
 /**
- * OpenMAIC Database Instance
+ * DeckMind Database Instance
  */
-class OpenMAICDatabase extends Dexie {
+class DeckMindDatabase extends Dexie {
   // Table definitions
   stages!: EntityTable<StageRecord, 'id'>;
   scenes!: EntityTable<SceneRecord, 'id'>;
@@ -312,7 +312,7 @@ class OpenMAICDatabase extends Dexie {
 }
 
 // Create database instance
-export const db = new OpenMAICDatabase();
+export const db = new DeckMindDatabase();
 
 // ==================== Helper Functions ====================
 

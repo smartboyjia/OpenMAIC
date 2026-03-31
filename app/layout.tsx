@@ -17,9 +17,9 @@ const inter = localFont({
 });
 
 export const metadata: Metadata = {
-  title: 'OpenMAIC · 智课',
+  title: 'DeckMind · 智课',
   description:
-    '上传 PDF，AI 自动生成互动课堂。OpenMAIC（智课）—— 让每份文档都变成一堂好课。',
+    '上传 PDF，AI 自动生成互动课堂。DeckMind（智课）—— 让每份文档都变成一堂好课。',
 };
 
 export default function RootLayout({
