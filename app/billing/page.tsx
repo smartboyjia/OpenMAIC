@@ -23,6 +23,8 @@ interface ReferralInfo {
   uses: { inviteeEmail: string; pagesGiven: number; createdAt: number }[];
 }
 
+type PaymentMethod = 'alipay' | 'wechat';
+
 const kindLabel: Record<string, string> = {
   gift: '🎁 赠送',
   purchase: '💳 充值',
@@ -42,6 +44,8 @@ export default function BillingPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [packages, setPackages] = useState<Package[]>([]);
   const [alipayEnabled, setAlipayEnabled] = useState(false);
+  const [wechatPayEnabled, setWechatPayEnabled] = useState(false);
+  const [selectedPayMethod, setSelectedPayMethod] = useState<PaymentMethod>('alipay');
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'overview' | 'recharge' | 'history' | 'referral'>('overview');
   const [referral, setReferral] = useState<ReferralInfo | null>(null);
@@ -82,6 +86,9 @@ export default function BillingPage() {
       setLedger(me.ledger);
       setPackages(pkgs.packages ?? []);
       setAlipayEnabled(pkgs.alipayEnabled ?? false);
+      setWechatPayEnabled(pkgs.wechatPayEnabled ?? false);
+      // 默认选微信支付（覆盖率更高），若未配置则用支付宝
+      if (pkgs.wechatPayEnabled) setSelectedPayMethod('wechat');
       setTransactions(txs.transactions ?? []);
       if (ref.success) setReferral(ref);
     } catch { router.push('/billing/login'); }
@@ -97,7 +104,7 @@ export default function BillingPage() {
   }
 
   // 轮询支付结果
-  function startPolling(txId: string, expiry: number) {
+  function startPolling(txId: string, expiry: number, method: PaymentMethod = 'alipay') {
     // 倒计时
     timerRef.current = setInterval(() => {
       const left = Math.max(0, Math.round((expiry - Date.now()) / 1000));
@@ -111,7 +118,7 @@ export default function BillingPage() {
     // 每 3 秒查一次
     pollRef.current = setInterval(async () => {
       try {
-        const res = await fetch(`/api/billing/recharge?action=status&txId=${txId}`);
+        const res = await fetch(`/api/billing/recharge?action=status&txId=${txId}&method=${method}`);
         const data = await res.json();
         if (data.paid) {
           clearPayState();
@@ -128,20 +135,19 @@ export default function BillingPage() {
     setPayResult(null);
 
     try {
-      // DEV 模式（未配置支付宝）：?confirm=1
-      const devMode = !alipayEnabled;
+      // DEV 模式（未配置任何支付）：?confirm=1
+      const devMode = !alipayEnabled && !wechatPayEnabled;
       const url = devMode ? '/api/billing/recharge?confirm=1' : '/api/billing/recharge';
 
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ packageId: pkg.id }),
+        body: JSON.stringify({ packageId: pkg.id, paymentMethod: selectedPayMethod }),
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.error ?? '充值失败');
 
       if (data.autoConfirmed) {
-        // DEV 自动到账
         clearPayState();
         setPayResult('success');
         await load();
@@ -154,7 +160,7 @@ export default function BillingPage() {
       const expiry = Date.now() + QR_TTL * 1000;
       setQrExpiry(expiry);
       setQrSecondsLeft(QR_TTL);
-      startPolling(data.transaction.id, expiry);
+      startPolling(data.transaction.id, expiry, data.paymentMethod ?? selectedPayMethod);
     } catch (e) {
       clearPayState();
       alert(e instanceof Error ? e.message : '充值失败');
@@ -216,7 +222,9 @@ export default function BillingPage() {
         {qrCode && payingPkg && (
           <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={() => { clearPayState(); }}>
             <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 text-center max-w-sm w-full mx-4" onClick={(e) => e.stopPropagation()}>
-              <div className="text-lg font-semibold mb-1">支付宝扫码支付</div>
+              <div className="text-lg font-semibold mb-1">
+                {selectedPayMethod === 'wechat' ? '微信扫码支付' : '支付宝扫码支付'}
+              </div>
               <div className="text-blue-400 text-sm mb-4">
                 {payingPkg.label} · ¥{(payingPkg.amountFen / 100).toFixed(payingPkg.amountFen % 100 === 0 ? 0 : 1)} → {payingPkg.pages.toLocaleString()} 页
               </div>
@@ -284,6 +292,39 @@ export default function BillingPage() {
         {/* Recharge */}
         {tab === 'recharge' && (
           <div className="space-y-4">
+            {/* 支付方式选择 */}
+            {(alipayEnabled || wechatPayEnabled) && (
+              <div>
+                <p className="text-xs text-gray-500 mb-2">选择支付方式</p>
+                <div className="flex gap-2">
+                  {wechatPayEnabled && (
+                    <button
+                      onClick={() => setSelectedPayMethod('wechat')}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition-colors ${
+                        selectedPayMethod === 'wechat'
+                          ? 'bg-green-700 border-green-500 text-white'
+                          : 'bg-gray-900 border-gray-700 text-gray-400 hover:border-green-600'
+                      }`}
+                    >
+                      <span>💚</span> 微信支付
+                    </button>
+                  )}
+                  {alipayEnabled && (
+                    <button
+                      onClick={() => setSelectedPayMethod('alipay')}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition-colors ${
+                        selectedPayMethod === 'alipay'
+                          ? 'bg-blue-700 border-blue-500 text-white'
+                          : 'bg-gray-900 border-gray-700 text-gray-400 hover:border-blue-600'
+                      }`}
+                    >
+                      <span>💙</span> 支付宝
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-3">
               {packages.map((pkg) => (
                 <button key={pkg.id} onClick={() => recharge(pkg)} disabled={paying}
@@ -302,9 +343,9 @@ export default function BillingPage() {
             <div className="bg-gray-900/50 rounded-xl p-4 text-xs text-gray-500 space-y-1">
               <p>💡 页数配额永久有效，不过期</p>
               <p>💡 新用户注册赠送 20 页，用于体验</p>
-              {alipayEnabled
-                ? <p>💳 支持支付宝扫码支付</p>
-                : <p className="text-yellow-600">⚠️ 支付宝未配置，当前为演示模式（自动到账）</p>
+              {!alipayEnabled && !wechatPayEnabled
+                ? <p className="text-yellow-600">⚠️ 支付未配置，当前为演示模式（自动到账）</p>
+                : <p>💳 支持{wechatPayEnabled ? '微信支付' : ''}{wechatPayEnabled && alipayEnabled ? ' / ' : ''}{alipayEnabled ? '支付宝' : ''}扫码支付</p>
               }
             </div>
           </div>

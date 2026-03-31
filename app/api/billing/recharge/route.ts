@@ -1,7 +1,7 @@
 /**
- * GET  /api/billing/recharge        — 套餐列表
+ * GET  /api/billing/recharge        — 套餐列表（含支付方式可用性）
  * POST /api/billing/recharge        — 创建订单 + 返回支付二维码
- * GET  /api/billing/recharge/status — 轮询支付状态
+ * GET  /api/billing/recharge?action=status — 轮询支付状态
  */
 
 import { type NextRequest } from 'next/server';
@@ -12,7 +12,13 @@ import {
   markTransactionPaid,
   PACKAGES,
 } from '@/lib/billing';
-import { createAlipayQRCode, queryAlipayOrder } from '@/lib/billing/payment';
+import {
+  createAlipayQRCode,
+  queryAlipayOrder,
+  isWechatPayConfigured,
+  createWechatPayNative,
+  queryWechatPayOrder,
+} from '@/lib/billing/payment';
 
 // 是否已配置支付宝
 function isAlipayConfigured(): boolean {
@@ -33,17 +39,27 @@ export async function GET(req: NextRequest) {
     try {
       const session = await requireAuth();
       const txId = searchParams.get('txId');
+      const method = searchParams.get('method') ?? 'alipay'; // 'alipay' | 'wechat'
       if (!txId) return apiError('MISSING_REQUIRED_FIELD', 400, '缺少 txId');
 
-      if (!isAlipayConfigured()) {
-        return apiError('INVALID_REQUEST', 400, '支付宝未配置');
+      let paid = false;
+      let tradeRef: string | undefined;
+
+      if (method === 'wechat') {
+        if (!isWechatPayConfigured()) return apiError('INVALID_REQUEST', 400, '微信支付未配置');
+        const result = await queryWechatPayOrder(txId);
+        paid = result.paid;
+        tradeRef = result.transactionId;
+        if (paid) markTransactionPaid(txId, result.transactionId);
+      } else {
+        if (!isAlipayConfigured()) return apiError('INVALID_REQUEST', 400, '支付宝未配置');
+        const result = await queryAlipayOrder(txId);
+        paid = result.paid;
+        tradeRef = result.tradeNo;
+        if (paid) markTransactionPaid(txId, result.tradeNo);
       }
 
-      const result = await queryAlipayOrder(txId);
-      if (result.paid) {
-        markTransactionPaid(txId, result.tradeNo);
-      }
-      return apiSuccess({ paid: result.paid, tradeStatus: result.tradeStatus, userId: session.sub });
+      return apiSuccess({ paid, tradeRef, userId: session.sub });
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Unknown error';
       if (msg === 'Unauthorized') return apiError('UNAUTHORIZED', 401, '请先登录');
@@ -55,6 +71,7 @@ export async function GET(req: NextRequest) {
   return apiSuccess({
     packages: PACKAGES,
     alipayEnabled: isAlipayConfigured(),
+    wechatPayEnabled: isWechatPayConfigured(),
   });
 }
 
@@ -63,7 +80,10 @@ export async function POST(req: NextRequest) {
   try {
     const session = await requireAuth();
     const body = await req.json();
-    const { packageId, paymentMethod = 'alipay' } = body;
+    const { packageId, paymentMethod = 'alipay' } = body as {
+      packageId: string;
+      paymentMethod?: 'alipay' | 'wechat';
+    };
 
     const pkg = PACKAGES.find((p) => p.id === packageId);
     if (!pkg) return apiError('INVALID_REQUEST', 400, `未知套餐: ${packageId}`);
@@ -77,28 +97,50 @@ export async function POST(req: NextRequest) {
       return apiSuccess({ transaction: paid, autoConfirmed: true, pagesAdded: pkg.pages });
     }
 
-    // 生产/沙箱：调用支付宝生成二维码
+    const subject = `DeckMind · 智课 ${pkg.label} (${pkg.pages}页)`;
+
+    // ── 微信支付 Native ──────────────────────────────────────────────
+    if (paymentMethod === 'wechat') {
+      if (!isWechatPayConfigured()) {
+        return apiSuccess({
+          transaction: tx,
+          qrCode: null,
+          notice: '微信支付暂未配置，请联系管理员或选择支付宝支付。',
+        });
+      }
+      const { codeUrl } = await createWechatPayNative({
+        outTradeNo: tx.id,
+        amountFen: pkg.amountFen,
+        description: subject,
+      });
+      return apiSuccess({
+        transaction: tx,
+        qrCode: codeUrl,      // weixin://wxpay/bizpayurl?pr=... 格式
+        paymentMethod: 'wechat',
+        expireSeconds: 120,
+      });
+    }
+
+    // ── 支付宝当面付 ─────────────────────────────────────────────────
     if (!isAlipayConfigured()) {
       return apiSuccess({
         transaction: tx,
         qrCode: null,
-        notice:
-          '支付宝暂未配置，请联系管理员。如需测试，请用 ?confirm=1 参数（仅开发环境）。',
+        notice: '支付宝暂未配置，请联系管理员。如需测试，请用 ?confirm=1 参数（仅开发环境）。',
       });
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? `https://${req.headers.get('host')}`;
     const { qrCode } = await createAlipayQRCode({
       outTradeNo: tx.id,
       amountFen: pkg.amountFen,
-      subject: `DeckMind · 智课 ${pkg.label} (${pkg.pages}页)`,
+      subject,
     });
 
     return apiSuccess({
       transaction: tx,
       qrCode,
-      expireSeconds: 120, // 二维码有效期
-      pollUrl: `${baseUrl}/api/billing/recharge?action=status&txId=${tx.id}`,
+      paymentMethod: 'alipay',
+      expireSeconds: 120,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Unknown error';
